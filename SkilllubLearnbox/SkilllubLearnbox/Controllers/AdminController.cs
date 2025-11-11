@@ -529,7 +529,7 @@ public class AdminController : ControllerBase
             return Ok(new
             {
                 success = true,
-                message = "Пользователь успешно создан!!!!!",
+                message = "Пользователь успешно создан",
                 user = new
                 {
                     id = user.Id,
