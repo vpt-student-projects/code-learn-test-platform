@@ -11,3 +11,6 @@ appsettings.Local.json
 *.exe
 *.dll
 *.pdb
+Migrations/
+*.log
+packages/
