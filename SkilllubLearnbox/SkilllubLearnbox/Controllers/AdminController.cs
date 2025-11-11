@@ -542,7 +542,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при создании пользователя");
+            _logger.LogError(ex, "Ошибка при создании пользователя!");
             return Problem("Ошибка сервера");
         }
     }
