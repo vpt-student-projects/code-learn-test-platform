@@ -1,4 +1,4 @@
-export const API_URL = "https://localhost:7157/api";
+export const API_URL = "https://localhost:7000/api";
 
 export const VALIDATION_CONFIG = {
     email: {
