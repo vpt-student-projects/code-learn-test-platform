@@ -164,7 +164,6 @@ export class UIManager {
                 <div id="user-menu" class="user-menu hidden">
                     ${user.role === 'admin' ? '<button id="btn-admin-panel" class="ghost">Админ-панель</button>' : ''}
                     ${user.role === 'teacher' ? '<button id="btn-teacher-panel" class="ghost">Панель преподавателя</button>' : ''}
-                    <button id="btn-settings" class="ghost">Настройки</button>
                     <button id="btn-change-password" class="ghost">Сменить пароль</button>
                     <button id="btn-logout" class="ghost">Выйти</button>
                 </div>
@@ -203,14 +202,6 @@ export class UIManager {
             btnChangePassword.addEventListener("click", () => {
                 this.showModal('modal-change-password');
                 this.clearForm('change-password-form');
-            });
-        }
-
-        if (btnSettings) {
-            btnSettings.addEventListener("click", () => {
-                this.showSection('profile');
-                userMenu.classList.add('hidden');
-                this.updateProfile(user);
             });
         }
 

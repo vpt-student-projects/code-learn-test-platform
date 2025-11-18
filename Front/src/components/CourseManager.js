@@ -8,6 +8,8 @@ export class CourseManager {
         this.currentCourse = null;
         this.currentLesson = null;
         this.currentLessons = [];
+        this.currentModule = null;
+        this.allModules = [];
     }
 
     async initialize() {
@@ -83,10 +85,12 @@ export class CourseManager {
             const modulesResult = await this.api.getCourseModules(courseId);
             
             if (modulesResult.success && modulesResult.modules.length > 0) {
+                this.allModules = modulesResult.modules;
                 const firstModule = modulesResult.modules[0];
                 await this.loadModuleLessons(firstModule.id);
                 this.renderCourseSidebar(this.currentCourse, modulesResult.modules);
             } else {
+                this.allModules = [];
                 this.renderCourseSidebar(this.currentCourse, []);
             }
 
@@ -103,6 +107,7 @@ export class CourseManager {
             
             if (result.success) {
                 this.currentLessons = result.lessons;
+                await this.loadCurrentModule(moduleId);
                 this.renderLessonsSidebar(result.lessons);
                 
                 if (result.lessons.length > 0) {
@@ -114,51 +119,65 @@ export class CourseManager {
         }
     }
 
-    async openLesson(lessonId) {
-    try {
-        document.querySelectorAll('.lesson-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        const lessonElement = document.querySelector(`[data-lesson-id="${lessonId}"]`);
-        if (lessonElement) {
-            lessonElement.classList.add('active');
+    async loadCurrentModule(moduleId) {
+        try {
+            this.currentModule = this.allModules.find(module => module.id === moduleId) || null;
+        } catch (error) {
+            console.error('Failed to load current module:', error);
+            this.currentModule = null;
         }
-        
-        const result = await this.api.getLesson(lessonId);
-        
-        if (result.success) {
-            this.currentLesson = result.lesson;
-            this.renderLessonContent(result.lesson);
-            
-            const hasCodeExercise = await this.checkIfLessonHasCodeExercise(lessonId);
-            
-            if (hasCodeExercise) {
-                const pythonLanguageId = '11111111-1111-1111-1111-111111111111';
-                await this.loadCodeTemplate(lessonId, pythonLanguageId);
-                this.uiManager.showCodeSection();
-            } else {
-                this.uiManager.hideCodeSection();
+    }
+
+    async openLesson(lessonId) {
+        try {
+            document.querySelectorAll('.lesson-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const lessonElement = document.querySelector(`[data-lesson-id="${lessonId}"]`);
+            if (lessonElement) {
+                lessonElement.classList.add('active');
             }
             
-            await this.quizManager.loadQuizQuestions(lessonId);
+            const result = await this.api.getLesson(lessonId);
+            
+            if (result.success) {
+                this.currentLesson = result.lesson;
+                this.renderLessonContent(result.lesson);
+                
+                const hasCodeExercise = await this.checkIfLessonHasCodeExercise(lessonId);
+                
+                if (hasCodeExercise) {
+                    const pythonLanguageId = '11111111-1111-1111-1111-111111111111';
+                    await this.loadCodeTemplate(lessonId, pythonLanguageId);
+                    this.uiManager.showCodeSection();
+                } else {
+                    this.uiManager.hideCodeSection();
+                }
+                
+                await this.quizManager.loadQuizQuestions(lessonId);
+            }
+        } catch (error) {
+            console.error('Failed to open lesson:', error);
         }
-    } catch (error) {
-        console.error('Failed to open lesson:', error);
     }
-}
 
-async checkIfLessonHasCodeExercise(lessonId) {
-    try {
-        const pythonLanguageId = '11111111-1111-1111-1111-111111111111';
-        const result = await this.api.getCodeTemplate(lessonId, pythonLanguageId);
-        
-        return result.success && result.template && 
-               (result.template.starterCode || result.template.templateCode);
-    } catch (error) {
-        console.log('No code exercise found for lesson:', lessonId);
-        return false;
+    async openLessonFromModule(lessonId, moduleId) {
+        await this.loadCurrentModule(moduleId);
+        await this.openLesson(lessonId);
     }
-}
+
+    async checkIfLessonHasCodeExercise(lessonId) {
+        try {
+            const pythonLanguageId = '11111111-1111-1111-1111-111111111111';
+            const result = await this.api.getCodeTemplate(lessonId, pythonLanguageId);
+            
+            return result.success && result.template && 
+                   (result.template.starterCode || result.template.templateCode);
+        } catch (error) {
+            console.log('No code exercise found for lesson:', lessonId);
+            return false;
+        }
+    }
 
     async loadCodeTemplate(lessonId, languageId) {
         try {
@@ -228,7 +247,8 @@ async checkIfLessonHasCodeExercise(lessonId) {
                 let lessonsHtml = '';
                 result.lessons.forEach(lesson => {
                     lessonsHtml += `
-                        <li class="lesson-item" data-lesson-id="${lesson.id}" onclick="app.courseManager.openLesson('${lesson.id}')">
+                        <li class="lesson-item" data-lesson-id="${lesson.id}" 
+                            onclick="app.courseManager.openLessonFromModule('${lesson.id}', '${moduleId}')">
                             <div class="lesson-icon">${lesson.order}</div>
                             <div class="lesson-info">
                                 <div class="lesson-title">${lesson.title}</div>
@@ -245,12 +265,13 @@ async checkIfLessonHasCodeExercise(lessonId) {
     }
 
     renderLessonsSidebar(lessons) {
+        // Можно оставить пустым или добавить дополнительную логику если нужно
     }
 
     renderLessonContent(lesson) {
         const stepTitle = document.getElementById('step-title');
         if (stepTitle) {
-            stepTitle.textContent = lesson.title;
+            stepTitle.textContent = this.currentModule?.title || this.currentCourse?.title || 'Курс';
         }
 
         const stepNumber = document.getElementById('step-number');
@@ -276,7 +297,14 @@ async checkIfLessonHasCodeExercise(lessonId) {
         const currentIndex = this.currentLessons.findIndex(lesson => lesson.id === this.currentLesson.id);
         if (currentIndex > 0) {
             const prevLesson = this.currentLessons[currentIndex - 1];
-            this.openLesson(prevLesson.id);
+            
+            // Находим модуль предыдущего урока
+            const prevLessonModuleId = this.findModuleIdByLessonId(prevLesson.id);
+            if (prevLessonModuleId) {
+                this.openLessonFromModule(prevLesson.id, prevLessonModuleId);
+            } else {
+                this.openLesson(prevLesson.id);
+            }
         }
     }
 
@@ -286,8 +314,28 @@ async checkIfLessonHasCodeExercise(lessonId) {
         const currentIndex = this.currentLessons.findIndex(lesson => lesson.id === this.currentLesson.id);
         if (currentIndex < this.currentLessons.length - 1) {
             const nextLesson = this.currentLessons[currentIndex + 1];
-            this.openLesson(nextLesson.id);
+            
+            // Находим модуль следующего урока
+            const nextLessonModuleId = this.findModuleIdByLessonId(nextLesson.id);
+            if (nextLessonModuleId) {
+                this.openLessonFromModule(nextLesson.id, nextLessonModuleId);
+            } else {
+                this.openLesson(nextLesson.id);
+            }
         }
+    }
+
+    findModuleIdByLessonId(lessonId) {
+        // Ищем модуль, которому принадлежит урок
+        for (const module of this.allModules) {
+            const moduleLessons = document.querySelectorAll(`#lessons-${module.id} .lesson-item`);
+            for (const lessonElement of moduleLessons) {
+                if (lessonElement.getAttribute('data-lesson-id') === lessonId) {
+                    return module.id;
+                }
+            }
+        }
+        return null;
     }
 
     runCode() {

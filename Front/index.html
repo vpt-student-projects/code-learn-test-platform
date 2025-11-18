@@ -379,33 +379,6 @@
         </div>
       </section>
     </main>
-
-    <footer class="site-footer" role="contentinfo">
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-brand">
-            <a href="#catalog" class="brand" onclick="showSection('catalog')">LearnBox</a>
-            <p class="muted">Интерактивная платформа для обучения</p>
-          </div>
-          <div class="footer-links">
-            <ul class="footer-nav" role="list">
-              <li><a href="#about">О нас</a></li>
-              <li><a href="#faq">FAQ</a></li>
-              <li><a href="#contact">Контакты</a></li>
-              <li><a href="#terms">Условия использования</a></li>
-            </ul>
-          </div>
-          <div class="footer-social">
-            <ul class="social-links" role="list">
-              <li><a href="#" aria-label="Telegram">Telegram</a></li>
-              <li><a href="#" aria-label="Twitter">Twitter</a></li>
-              <li><a href="#" aria-label="GitHub">GitHub</a></li>
-            </ul>
-          </div>
-        </div>
-        <p class="muted">&copy; 2025 LearnBox. Все права защищены.</p>
-      </div>
-    </footer>
   </div>
 
 <div id="modal-login" class="modal hidden" role="dialog" aria-labelledby="login-title">
@@ -708,24 +681,6 @@
     <div class="admin-table-container">
       {{content}}
     </div>
-  </template>
-
-  <template id="users-table-template">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Имя</th>
-          <th>Email</th>
-          <th>Телефон</th>
-          <th>Роль</th>
-          <th>Последний вход</th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{rows}}
-      </tbody>
-    </table>
   </template>
 
 <template id="user-row-template">

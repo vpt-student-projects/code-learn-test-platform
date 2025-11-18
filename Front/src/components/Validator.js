@@ -24,8 +24,8 @@ export class Validator {
                 message: VALIDATION_CONFIG.password.message
             },
             phone: {
-                validate: (value) => !value || VALIDATION_CONFIG.phone.pattern.test(value),
-                message: VALIDATION_CONFIG.phone.message
+                validate: (value) => !value || /^8\d{10}$/.test(value.replace(/\D/g, '')),
+                message: "Номер телефона должен начинаться с 8 и содержать 11 цифр"
             },
             code: {
                 validate: (value) => VALIDATION_CONFIG.code.pattern.test(value),

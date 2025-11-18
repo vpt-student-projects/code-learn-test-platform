@@ -112,28 +112,34 @@ export class AdminManager {
         dashboard.innerHTML = html;
     }
 
-    renderUsers(users) {
+renderUsers(users) {
     const usersContainer = document.getElementById('admin-users');
-    if (!usersContainer) {
-        console.error('Admin users container not found');
-        return;
-    }
+    if (!usersContainer) return;
 
     const mainTemplate = document.getElementById('admin-users-template');
-    const tableTemplate = document.getElementById('users-table-template');
     const rowTemplate = document.getElementById('user-row-template');
     
-    if (!mainTemplate || !tableTemplate || !rowTemplate) {
-        console.error('Templates not found');
-        return;
-    }
+    if (!mainTemplate || !rowTemplate) return;
 
     let mainHtml = mainTemplate.innerHTML;
 
     if (users.length === 0) {
         mainHtml = mainHtml.replace('{{content}}', '<p class="muted">Пользователи не найдены</p>');
     } else {
-        let rowsHtml = '';
+        let tableHtml = `
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ИМЯ</th>
+                        <th>EMAIL</th>
+                        <th>ТЕЛЕФОН</th>
+                        <th>РОЛЬ</th>
+                        <th>ПОСЛЕДНИЙ ВХОД</th>
+                        <th>ДЕЙСТВИЯ</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
         
         users.forEach(user => {
             const roleOptions = [
@@ -142,11 +148,9 @@ export class AdminManager {
                 { value: 'admin', label: 'Администратор', selected: user.role === 'admin' }
             ];
             
-            let roleSelectHtml = '';
-            roleOptions.forEach(option => {
-                const selected = option.selected ? 'selected' : '';
-                roleSelectHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
-            });
+            let roleSelectHtml = roleOptions.map(option => 
+                `<option value="${option.value}" ${option.selected ? 'selected' : ''}>${option.label}</option>`
+            ).join('');
             
             let rowHtml = rowTemplate.innerHTML
                 .replace(/{{id}}/g, user.id)
@@ -156,18 +160,15 @@ export class AdminManager {
                 .replace('{{lastLogin}}', user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда')
                 .replace('{{roleSelect}}', roleSelectHtml);
             
-            rowsHtml += rowHtml;
+            tableHtml += rowHtml;
         });
 
-        const tableHtml = tableTemplate.innerHTML.replace('{{rows}}', rowsHtml);
+        tableHtml += '</tbody></table>';
         mainHtml = mainHtml.replace('{{content}}', tableHtml);
     }
 
     usersContainer.innerHTML = mainHtml;
-
     this.setupUsersTableHandlers();
-    document.getElementById('refresh-users')?.addEventListener('click', () => this.loadUsers());
-    document.getElementById('add-user-btn')?.addEventListener('click', () => this.showAddUserModal());
 }
 
     setupUsersTableHandlers() {
