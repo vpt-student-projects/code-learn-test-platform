@@ -291,7 +291,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Тестирование нового пароля для: {Email}", dto.Email);
+            _logger.LogInformation("Тестирование нового пароля для: {Email}:", dto.Email);
 
             var user = await _userService.GetUserByEmailAsync(dto.Email);
             if (user == null)
