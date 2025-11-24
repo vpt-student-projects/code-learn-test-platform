@@ -26,7 +26,7 @@ export class QuizManager {
             const result = await this.api.getQuizQuestions(lessonId);
             
             if (result.success && result.questions && result.questions.length > 0) {
-                console.log('Quiz questions loaded:', result.questions.length);
+                console.log('Quiz questions loaded:::', result.questions.length);
                 
                 this.currentQuizQuestions = result.questions;
                 this.currentQuestionIndex = 0;
