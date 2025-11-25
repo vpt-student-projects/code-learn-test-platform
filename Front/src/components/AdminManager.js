@@ -4,7 +4,7 @@ export class AdminManager {
     constructor(apiService, uiManager) {
         this.api = apiService;
         this.uiManager = uiManager;
-        this.currentView = 'dashboard';
+        this.currentView = 'statistics';
         this.currentUsers = []; 
     }
 
@@ -15,16 +15,13 @@ export class AdminManager {
     setupAdminEventListeners() {
     console.log('Setting up admin event listeners...');
     
-    document.getElementById('admin-nav-dashboard')?.addEventListener('click', () => this.showAdminView('dashboard'));
     document.getElementById('admin-nav-users')?.addEventListener('click', () => this.showAdminView('users'));
     document.getElementById('admin-nav-courses')?.addEventListener('click', () => this.showAdminView('courses'));
     document.getElementById('admin-nav-statistics')?.addEventListener('click', () => this.showAdminView('statistics'));
-    document.getElementById('refresh-users')?.addEventListener('click', () => this.loadUsers());
-    document.getElementById('refresh-stats')?.addEventListener('click', () => this.loadStatistics());
     console.log('Admin event listeners setup complete');
 }
 
-    showAdminView(view) {
+        showAdminView(view) {
         this.currentView = view;
         
         document.querySelectorAll('.admin-view').forEach(el => {
@@ -42,30 +39,15 @@ export class AdminManager {
         document.getElementById(`admin-nav-${view}`)?.classList.add('active');
 
         switch(view) {
-            case 'dashboard':
-                this.loadDashboard();
-                break;
             case 'users':
                 this.loadUsers();
                 break;
             case 'statistics':
-                this.loadStatistics();
+                this.loadStatistics(); 
                 break;
             case 'courses':
                 this.loadCoursesManagement();
                 break;
-        }
-    }
-
-    async loadDashboard() {
-        try {
-            const stats = await this.api.getAdminStatistics();
-            if (stats.success) {
-                this.renderDashboard(stats.statistics);
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки дашборда:', error);
-            this.uiManager.showToast('Ошибка загрузки дашборда', 'error');
         }
     }
 
@@ -94,26 +76,6 @@ export class AdminManager {
         }
     }
 
-    renderDashboard(stats) {
-        const dashboard = document.getElementById('admin-dashboard');
-        if (!dashboard) return;
-
-        const template = document.getElementById('admin-dashboard-template');
-        let html = template.innerHTML
-            .replace('{{totalUsers}}', stats.totalUsers)
-            .replace('{{activeToday}}', stats.activeToday)
-            .replace('{{newThisWeek}}', stats.newThisWeek);
-
-        const roleStats = Object.entries(stats.usersByRole).map(([role, count]) => `
-            <div class="role-stat">
-                <span class="role-name">${this.getRoleDisplayName(role)}</span>
-                <span class="role-count">${count}</span>
-            </div>
-        `).join('');
-
-        html = html.replace('{{roleStats}}', roleStats);
-        dashboard.innerHTML = html;
-    }
 
     renderUsers(users) {
         const usersContainer = document.getElementById('admin-users');
@@ -221,11 +183,11 @@ export class AdminManager {
 
         const template = document.getElementById('admin-statistics-template');
         let html = template.innerHTML
-            .replace('{{totalUsers}}', stats.totalUsers)
-            .replace('{{activeToday}}', stats.activeToday)
-            .replace('{{newThisWeek}}', stats.newThisWeek);
+            .replace('{{totalUsers}}', stats.totalUsers || 0)
+            .replace('{{activeToday}}', stats.activeToday || 0)
+            .replace('{{newThisWeek}}', stats.newThisWeek || 0);
 
-        const roleDistribution = Object.entries(stats.usersByRole).map(([role, count]) => `
+        const roleDistribution = Object.entries(stats.usersByRole || {}).map(([role, count]) => `
             <div class="stat-item">
                 <span>${this.getRoleDisplayName(role)}:</span>
                 <strong>${count}</strong>

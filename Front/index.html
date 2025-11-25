@@ -201,55 +201,47 @@
           </div>
 
           <nav class="admin-nav">
-            <button class="admin-nav-item active" id="admin-nav-dashboard">
-              Дашборд
-            </button>
-            <button class="admin-nav-item" id="admin-nav-users">
-              Пользователи
-            </button>
-            <button class="admin-nav-item" id="admin-nav-courses">
-              Курсы
-            </button>
-            <button class="admin-nav-item" id="admin-nav-statistics">
+          <button class="admin-nav-item active" id="admin-nav-statistics">
               Статистика
-            </button>
+          </button>
+          <button class="admin-nav-item" id="admin-nav-users">
+              Пользователи
+          </button>
+          <button class="admin-nav-item" id="admin-nav-courses">
+              Курсы
+          </button>
           </nav>
 
           <div class="admin-content">
-            <div id="admin-dashboard" class="admin-view">
-              <div class="admin-stats-grid">
-                <div class="stat-card">
-                  <h3>Всего пользователей</h3>
-                  <div class="stat-number">0</div>
+            <div id="admin-statistics" class="admin-view">
+                <div class="admin-section-header">
+                    <h2>Статистика платформы</h2>
                 </div>
-                <div class="stat-card">
-                  <h3>Активных сегодня</h3>
-                  <div class="stat-number">0</div>
+                <div class="stats-grid">
+                    <div class="stat-card large">
+                        <h3>Общая статистика</h3>
+                        <p class="muted">Загрузка статистики...</p>
+                    </div>
                 </div>
-                <div class="stat-card">
-                  <h3>Новых за неделю</h3>
-                  <div class="stat-number">0</div>
-                </div>
-              </div>
             </div>
 
             <div id="admin-users" class="admin-view hidden">
-              <div class="admin-section-header">
-                <h2>Управление пользователями</h2>
-                <button class="btn-primary" id="refresh-users">Обновить</button>
-              </div>
-              <div class="admin-table-container">
-                <p class="muted">Загрузка пользователей...</p>
-              </div>
+                <div class="admin-section-header">
+                    <h2>Управление пользователями</h2>
+                </div>
+                <div class="admin-table-container">
+                    <p class="muted">Загрузка пользователей...</p>
+                </div>
             </div>
 
             <div id="admin-courses" class="admin-view hidden">
-              <div class="admin-section-header">
-                <h2>Управление курсами</h2>
-              </div>
-              <div class="admin-section">
-                <p class="muted">Функциональность управления курсами будет добавлена в будущем</p>
-              </div>
+                    <div class="admin-section-header">
+                        <h2>Управление курсами</h2>
+                    </div>
+                    <div class="admin-section">
+                        <p class="muted">Функциональность управления курсами будет добавлена в будущем</p>
+                    </div>
+                </div>
             </div>
 
             <div id="admin-statistics" class="admin-view hidden">
