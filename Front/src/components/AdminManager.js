@@ -19,6 +19,7 @@ export class AdminManager {
         document.getElementById('admin-nav-statistics')?.addEventListener('click', () => this.showAdminView('statistics'));
         document.getElementById('refresh-users')?.addEventListener('click', () => this.loadUsers());
         document.getElementById('refresh-stats')?.addEventListener('click', () => this.loadStatistics());
+        document.getElementById('add-user-btn')?.addEventListener('click', () => this.showAddUserModal());
     }
 
     showAdminView(view) {
@@ -112,64 +113,64 @@ export class AdminManager {
         dashboard.innerHTML = html;
     }
 
-renderUsers(users) {
-    const usersContainer = document.getElementById('admin-users');
-    if (!usersContainer) return;
+    renderUsers(users) {
+        const usersContainer = document.getElementById('admin-users');
+        if (!usersContainer) return;
 
-    const mainTemplate = document.getElementById('admin-users-template');
-    const rowTemplate = document.getElementById('user-row-template');
-    
-    if (!mainTemplate || !rowTemplate) return;
-
-    let mainHtml = mainTemplate.innerHTML;
-
-    if (users.length === 0) {
-        mainHtml = mainHtml.replace('{{content}}', '<p class="muted">Пользователи не найдены</p>');
-    } else {
-        let tableHtml = `
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>ИМЯ</th>
-                        <th>EMAIL</th>
-                        <th>ТЕЛЕФОН</th>
-                        <th>РОЛЬ</th>
-                        <th>ПОСЛЕДНИЙ ВХОД</th>
-                        <th>ДЕЙСТВИЯ</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        const mainTemplate = document.getElementById('admin-users-template');
+        const rowTemplate = document.getElementById('user-row-template');
         
-        users.forEach(user => {
-            const roleOptions = [
-                { value: 'student', label: 'Студент', selected: user.role === 'student' },
-                { value: 'teacher', label: 'Преподаватель', selected: user.role === 'teacher' },
-                { value: 'admin', label: 'Администратор', selected: user.role === 'admin' }
-            ];
-            
-            let roleSelectHtml = roleOptions.map(option => 
-                `<option value="${option.value}" ${option.selected ? 'selected' : ''}>${option.label}</option>`
-            ).join('');
-            
-            let rowHtml = rowTemplate.innerHTML
-                .replace(/{{id}}/g, user.id)
-                .replace('{{username}}', this.escapeHtml(user.username))
-                .replace('{{email}}', this.escapeHtml(user.email))
-                .replace('{{phone}}', this.escapeHtml(user.phone || 'Не указан'))
-                .replace('{{lastLogin}}', user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда')
-                .replace('{{roleSelect}}', roleSelectHtml);
-            
-            tableHtml += rowHtml;
-        });
+        if (!mainTemplate || !rowTemplate) return;
 
-        tableHtml += '</tbody></table>';
-        mainHtml = mainHtml.replace('{{content}}', tableHtml);
+        let mainHtml = mainTemplate.innerHTML;
+
+        if (users.length === 0) {
+            mainHtml = mainHtml.replace('{{content}}', '<p class="muted">Пользователи не найдены</p>');
+        } else {
+            let tableHtml = `
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ИМЯ</th>
+                            <th>EMAIL</th>
+                            <th>ТЕЛЕФОН</th>
+                            <th>РОЛЬ</th>
+                            <th>ПОСЛЕДНИЙ ВХОД</th>
+                            <th>ДЕЙСТВИЯ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            users.forEach(user => {
+                const roleOptions = [
+                    { value: 'student', label: 'Студент', selected: user.role === 'student' },
+                    { value: 'teacher', label: 'Преподаватель', selected: user.role === 'teacher' },
+                    { value: 'admin', label: 'Администратор', selected: user.role === 'admin' }
+                ];
+                
+                let roleSelectHtml = roleOptions.map(option => 
+                    `<option value="${option.value}" ${option.selected ? 'selected' : ''}>${option.label}</option>`
+                ).join('');
+                
+                let rowHtml = rowTemplate.innerHTML
+                    .replace(/{{id}}/g, user.id)
+                    .replace('{{username}}', this.escapeHtml(user.username))
+                    .replace('{{email}}', this.escapeHtml(user.email))
+                    .replace('{{phone}}', this.escapeHtml(user.phone || 'Не указан'))
+                    .replace('{{lastLogin}}', user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ru-RU') : 'Никогда')
+                    .replace('{{roleSelect}}', roleSelectHtml);
+                
+                tableHtml += rowHtml;
+            });
+
+            tableHtml += '</tbody></table>';
+            mainHtml = mainHtml.replace('{{content}}', tableHtml);
+        }
+
+        usersContainer.innerHTML = mainHtml;
+        this.setupUsersTableHandlers();
     }
-
-    usersContainer.innerHTML = mainHtml;
-    this.setupUsersTableHandlers();
-}
 
     setupUsersTableHandlers() {
         document.querySelectorAll('.role-select').forEach(select => {
@@ -191,6 +192,14 @@ renderUsers(users) {
             btn.addEventListener('click', (e) => {
                 const userId = e.target.dataset.userId;
                 this.deleteUser(userId);
+            });
+        });
+
+        // ДОБАВЛЯЕМ ОБРАБОТЧИК ДЛЯ КНОПКИ ЗАВЕРШЕНИЯ СЕССИЙ
+        document.querySelectorAll('.revoke-sessions-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const userId = e.target.dataset.userId;
+                this.revokeUserSessions(userId);
             });
         });
     }
@@ -252,6 +261,31 @@ renderUsers(users) {
         } catch (error) {
             console.error('Delete user error:', error);
             this.uiManager.showToast(`Ошибка удаления: ${error.message}`, 'error');
+        }
+    }
+
+    // ДОБАВЛЯЕМ НОВЫЙ МЕТОД ДЛЯ ЗАВЕРШЕНИЯ СЕССИЙ
+        async revokeUserSessions(userId) {
+        const user = this.currentUsers.find(u => u.id === userId);
+        const userName = user ? user.username : 'пользователь';
+        
+        const confirmRevoke = confirm(`Вы уверены, что хотите завершить все сессии пользователя "${userName}"? Пользователь будет НЕМЕДЛЕННО разлогинен со всех устройств.`);
+        
+        if (!confirmRevoke) return;
+        
+        try {
+            this.uiManager.showToast('Завершение сессий...', 'info');
+            
+            const result = await this.api.revokeUserSessions(userId);
+            
+            if (result.success) {
+                this.uiManager.showToast(`Все сессии пользователя "${userName}" завершены`, 'success');
+            } else {
+                throw new Error(result.error || 'Неизвестная ошибка');
+            }
+        } catch (error) {
+            console.error('Revoke sessions error:', error);
+            this.uiManager.showToast(`Ошибка завершения сессий: ${error.message}`, 'error');
         }
     }
 

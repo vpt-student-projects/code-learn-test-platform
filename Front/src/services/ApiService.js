@@ -237,7 +237,24 @@ async updateUserPassword(userId, passwordData) {
 
 
 
+// services/ApiService.js - ДОБАВЛЯЕМ МЕТОД
 
+async revokeUserSessions(userId) {
+    try {
+        const response = await this.request(`/admin/users/${userId}/revoke-sessions`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Revoke sessions error:', error);
+        return { success: false, error: error.message };
+    }
+}
 
 async createUser(userData) {
     const response = await this.request('/admin/users', {

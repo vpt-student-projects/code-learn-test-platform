@@ -683,23 +683,27 @@
     </div>
   </template>
 
+<!-- В index.html ОБНОВЛЯЕМ шаблон -->
 <template id="user-row-template">
-    <tr data-user-id="{{id}}" data-debug="user-row">
-        <td data-debug="username">{{username}}</td>
-        <td data-debug="email">{{email}}</td>
-        <td data-debug="phone">{{phone}}</td>
-        <td data-debug="role">
-            <select class="role-select" data-user-id="{{id}}" data-debug="role-select">
+    <tr data-user-id="{{id}}">
+        <td>{{username}}</td>
+        <td>{{email}}</td>
+        <td>{{phone}}</td>
+        <td>
+            <select class="role-select" data-user-id="{{id}}">
                 {{roleSelect}}
             </select>
         </td>
-        <td data-debug="lastLogin">{{lastLogin}}</td>
-        <td data-debug="actions">
+        <td>{{lastLogin}}</td>
+        <td>
             <div class="action-buttons">
-                <button class="btn-secondary btn-sm edit-user-btn" data-user-id="{{id}}" data-debug="edit-btn">
+                <button class="btn-secondary btn-sm edit-user-btn" data-user-id="{{id}}">
                     Редактировать
                 </button>
-                <button class="btn-danger btn-sm delete-user-btn" data-user-id="{{id}}" data-debug="delete-btn">
+                <button class="btn-warning btn-sm revoke-sessions-btn" data-user-id="{{id}}">
+                    Завершить сессии
+                </button>
+                <button class="btn-danger btn-sm delete-user-btn" data-user-id="{{id}}">
                     Удалить
                 </button>
             </div>

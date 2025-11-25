@@ -6,6 +6,7 @@ import { CourseManager } from './components/CourseManager.js';
 import { QuizManager } from './components/QuizManager.js';
 import { UIManager } from './components/UIManager.js';
 import { AdminManager } from './components/AdminManager.js';
+import { SessionManager } from './services/SessionManager.js';
 
 class LearnBoxApp {
     constructor() {
@@ -13,6 +14,7 @@ class LearnBoxApp {
         this.errorManager = new ErrorManager();
         this.apiService = new ApiService();
         this.uiManager = new UIManager();
+        this.sessionManager = new SessionManager(); // ✅ ДОБАВЛЯЕМ
         
         this.authManager = new AuthManager(
             this.apiService, 
@@ -45,22 +47,21 @@ class LearnBoxApp {
         
         try {
             this.uiManager.initialize();
-            
             this.initializeValidation();
-            
             await this.authManager.initialize();
             
+            // ✅ ЗАПУСКАЕМ СЛУШАТЕЛЬ СЕССИЙ ПОСЛЕ АУТЕНТИФИКАЦИИ
+            if (this.authManager.isAuthenticated()) {
+                this.sessionManager.startSessionListener();
+            }
+            
             this.checkUserRole();
-            
             await this.courseManager.initialize();
-            
             this.quizManager.initialize();
-
             this.adminManager.initialize();
-            
             this.setupGlobalNavigation();
             
-            console.log('LearnBox App Ready');
+            console.log('✅ LearnBox App Ready');
             
         } catch (error) {
             console.error('Failed to initialize app:', error);
@@ -69,66 +70,67 @@ class LearnBoxApp {
     }
 
     checkUserRole() {
-    const currentUser = this.authManager.getCurrentUser();
-    
-    document.body.classList.remove('admin-mode', 'teacher-mode');
-    
-    if (currentUser) {
-        if (currentUser.role === 'admin') {
-            document.body.classList.add('admin-mode');
-            this.uiManager.showSection('admin-panel');
-            console.log('Admin mode activated');
-        } else if (currentUser.role === 'teacher') {
-            document.body.classList.add('teacher-mode');
-            this.uiManager.showSection('teacher-panel');
-            console.log('Teacher mode activated');
+        const currentUser = this.authManager.getCurrentUser();
+        
+        document.body.classList.remove('admin-mode', 'teacher-mode');
+        
+        if (currentUser) {
+            if (currentUser.role === 'admin') {
+                document.body.classList.add('admin-mode');
+                this.uiManager.showSection('admin-panel');
+                console.log('Admin mode activated');
+            } else if (currentUser.role === 'teacher') {
+                document.body.classList.add('teacher-mode');
+                this.uiManager.showSection('teacher-panel');
+                console.log('Teacher mode activated');
+            } else {
+                this.uiManager.showSection('catalog');
+                console.log('Student mode activated');
+            }
         } else {
             this.uiManager.showSection('catalog');
-            console.log('Student mode activated');
+            console.log('Guest mode activated');
         }
-    } else {
-        this.uiManager.showSection('catalog');
-        console.log('Guest mode activated');
+        
+        this.forceHideNavigation();
     }
-    
-    this.forceHideNavigation();
-}
 
-forceHideNavigation() {
-    const currentUser = this.authManager.getCurrentUser();
-    const headerNav = document.querySelector('.header-nav');
-    
-    if (headerNav) {
-        if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'teacher')) {
-            headerNav.style.display = 'none';
-            headerNav.style.visibility = 'hidden';
-            headerNav.style.opacity = '0';
-            headerNav.style.height = '0';
-            headerNav.style.overflow = 'hidden';
-        } else {
-            headerNav.style.display = 'flex';
-            headerNav.style.visibility = 'visible';
-            headerNav.style.opacity = '1';
-            headerNav.style.height = 'auto';
-            headerNav.style.overflow = 'visible';
+    forceHideNavigation() {
+        const currentUser = this.authManager.getCurrentUser();
+        const headerNav = document.querySelector('.header-nav');
+        
+        if (headerNav) {
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'teacher')) {
+                headerNav.style.display = 'none';
+                headerNav.style.visibility = 'hidden';
+                headerNav.style.opacity = '0';
+                headerNav.style.height = '0';
+                headerNav.style.overflow = 'hidden';
+            } else {
+                headerNav.style.display = 'flex';
+                headerNav.style.visibility = 'visible';
+                headerNav.style.opacity = '1';
+                headerNav.style.height = 'auto';
+                headerNav.style.overflow = 'visible';
+            }
         }
     }
-}
-handleLogin(user) {
-    document.body.classList.remove('admin-mode', 'teacher-mode');
-    
-    if (user.role === 'admin') {
-        document.body.classList.add('admin-mode');
-        this.showSection('admin-panel');
-    } else if (user.role === 'teacher') {
-        document.body.classList.add('teacher-mode');
-        this.showSection('teacher-panel');
-    } else {
-        this.showSection('catalog');
+
+    handleLogin(user) {
+        document.body.classList.remove('admin-mode', 'teacher-mode');
+        
+        if (user.role === 'admin') {
+            document.body.classList.add('admin-mode');
+            this.showSection('admin-panel');
+        } else if (user.role === 'teacher') {
+            document.body.classList.add('teacher-mode');
+            this.showSection('teacher-panel');
+        } else {
+            this.showSection('catalog');
+        }
+        
+        this.forceHideNavigation();
     }
-    
-    this.forceHideNavigation();
-}
  
 
     initializeValidation() {

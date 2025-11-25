@@ -24,6 +24,22 @@
     border-color: var(--primary-hover);
 }
 
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+    border-color: var(--warning-color);
+}
+
+.btn-warning:hover {
+    background-color: #eab308;
+    border-color: #eab308;
+}
+
+.btn-warning:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .btn-secondary {
     background-color: white;
     color: var(--text-primary);
