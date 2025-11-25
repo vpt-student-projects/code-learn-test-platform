@@ -548,6 +548,47 @@ public class AdminController : ControllerBase
     }
 
 
+    [HttpPost("users/{userId}/revoke-sessions")]
+    [AuthorizeRoles("admin")]
+    public async Task<IActionResult> RevokeUserSessions(string userId)
+    {
+        try
+        {
+            _logger.LogInformation("Принудительное завершение сессий пользователя {UserId}", userId);
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, error = "Пользователь не найден" });
+            }
+
+            // ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ МЕТОД для удаления refresh токенов
+            await DeleteUserRefreshTokensAsync(userId);
+
+            // Уведомляем пользователя через SSE
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(1000); // Небольшая задержка для гарантии отзыва токенов
+                await SessionEventsController.NotifyUserSessionRevoked(userId);
+            });
+
+            _logger.LogInformation("Все сессии пользователя {UserId} завершены", userId);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Все сессии пользователя {user.Username} завершены"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при завершении сессий пользователя {UserId}", userId);
+            return Problem("Ошибка сервера");
+        }
+    }
+
+
+
     public class UpdateUserRoleDto
     {
         public string Role { get; set; } = "";
