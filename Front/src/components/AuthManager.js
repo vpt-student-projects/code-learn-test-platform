@@ -274,6 +274,7 @@ export class AuthManager {
     }
 
     async handleChangePassword(e) {
+        e.preventDefault();
         this.errorManager.clearAllErrors();
         
         const formData = this.getFormData('change-password-form');
@@ -288,12 +289,11 @@ export class AuthManager {
         try {
             this.uiManager.showButtonLoading('change-password-ok', true);
             
-            const result = await this.api.resetPassword(
-                this.storage.getUser().email,
-                'change', 
-                formData['change-new-password'],
-                formData['change-confirm-password']
-            );
+            const result = await this.api.changePassword({
+                currentPassword: formData['current-password'],
+                newPassword: formData['change-new-password'], 
+                confirmPassword: formData['change-confirm-password']
+            });
             
             if (result.success) {
                 this.uiManager.showToast('Пароль успешно изменён!', 'success');

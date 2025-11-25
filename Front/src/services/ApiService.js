@@ -227,6 +227,14 @@ async updateUser(userId, userData) {
     return response.json();
 }
 
+async changePassword(passwordData) {
+    const response = await this.request('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify(passwordData)
+    });
+    return response.json();
+}
+
 async updateUserPassword(userId, passwordData) {
     const response = await this.request(`/admin/users/${userId}/password`, {
         method: 'PUT',
