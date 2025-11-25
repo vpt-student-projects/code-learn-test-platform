@@ -14,7 +14,7 @@ class LearnBoxApp {
         this.errorManager = new ErrorManager();
         this.apiService = new ApiService();
         this.uiManager = new UIManager();
-        this.sessionManager = new SessionManager(); // ✅ ДОБАВЛЯЕМ
+        this.sessionManager = new SessionManager();
         
         this.authManager = new AuthManager(
             this.apiService, 
@@ -50,7 +50,6 @@ class LearnBoxApp {
             this.initializeValidation();
             await this.authManager.initialize();
             
-            // ✅ ЗАПУСКАЕМ СЛУШАТЕЛЬ СЕССИЙ ПОСЛЕ АУТЕНТИФИКАЦИИ
             if (this.authManager.isAuthenticated()) {
                 this.sessionManager.startSessionListener();
             }
@@ -61,7 +60,7 @@ class LearnBoxApp {
             this.adminManager.initialize();
             this.setupGlobalNavigation();
             
-            console.log('✅ LearnBox App Ready');
+            console.log('LearnBox App Ready');
             
         } catch (error) {
             console.error('Failed to initialize app:', error);

@@ -235,10 +235,6 @@ async updateUserPassword(userId, passwordData) {
     return response.json();
 }
 
-
-
-// services/ApiService.js - ДОБАВЛЯЕМ МЕТОД
-
 async revokeUserSessions(userId) {
     try {
         const response = await this.request(`/admin/users/${userId}/revoke-sessions`, {
@@ -256,13 +252,23 @@ async revokeUserSessions(userId) {
     }
 }
 
-async createUser(userData) {
-    const response = await this.request('/admin/users', {
-        method: 'POST',
-        body: JSON.stringify(userData)
-    });
-    return response.json();
-}
+    async createUser(userData) {
+        try {
+            const response = await this.request('/admin/users', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Create user API error:', error);
+            return { success: false, error: error.message };
+        }
+    }
 
     async initializeRoles() {
         const response = await this.request('/admin/init-roles', {

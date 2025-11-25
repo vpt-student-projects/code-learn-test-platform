@@ -13,14 +13,16 @@ export class AdminManager {
     }
 
     setupAdminEventListeners() {
-        document.getElementById('admin-nav-dashboard')?.addEventListener('click', () => this.showAdminView('dashboard'));
-        document.getElementById('admin-nav-users')?.addEventListener('click', () => this.showAdminView('users'));
-        document.getElementById('admin-nav-courses')?.addEventListener('click', () => this.showAdminView('courses'));
-        document.getElementById('admin-nav-statistics')?.addEventListener('click', () => this.showAdminView('statistics'));
-        document.getElementById('refresh-users')?.addEventListener('click', () => this.loadUsers());
-        document.getElementById('refresh-stats')?.addEventListener('click', () => this.loadStatistics());
-        document.getElementById('add-user-btn')?.addEventListener('click', () => this.showAddUserModal());
-    }
+    console.log('Setting up admin event listeners...');
+    
+    document.getElementById('admin-nav-dashboard')?.addEventListener('click', () => this.showAdminView('dashboard'));
+    document.getElementById('admin-nav-users')?.addEventListener('click', () => this.showAdminView('users'));
+    document.getElementById('admin-nav-courses')?.addEventListener('click', () => this.showAdminView('courses'));
+    document.getElementById('admin-nav-statistics')?.addEventListener('click', () => this.showAdminView('statistics'));
+    document.getElementById('refresh-users')?.addEventListener('click', () => this.loadUsers());
+    document.getElementById('refresh-stats')?.addEventListener('click', () => this.loadStatistics());
+    console.log('Admin event listeners setup complete');
+}
 
     showAdminView(view) {
         this.currentView = view;
@@ -169,8 +171,18 @@ export class AdminManager {
         }
 
         usersContainer.innerHTML = mainHtml;
+        const addBtn = document.getElementById('add-user-btn');
+        console.log('Add user button after render:', addBtn);
+        
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                console.log('Add user button clicked!');
+                this.showAddUserModal();
+            });
+        }
+        
         this.setupUsersTableHandlers();
-    }
+        }
 
     setupUsersTableHandlers() {
         document.querySelectorAll('.role-select').forEach(select => {
@@ -195,7 +207,6 @@ export class AdminManager {
             });
         });
 
-        // ДОБАВЛЯЕМ ОБРАБОТЧИК ДЛЯ КНОПКИ ЗАВЕРШЕНИЯ СЕССИЙ
         document.querySelectorAll('.revoke-sessions-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const userId = e.target.dataset.userId;
@@ -264,7 +275,6 @@ export class AdminManager {
         }
     }
 
-    // ДОБАВЛЯЕМ НОВЫЙ МЕТОД ДЛЯ ЗАВЕРШЕНИЯ СЕССИЙ
         async revokeUserSessions(userId) {
         const user = this.currentUsers.find(u => u.id === userId);
         const userName = user ? user.username : 'пользователь';
@@ -494,7 +504,7 @@ export class AdminManager {
         }
     }
 
-    async createUser() {
+        async createUser() {
         const username = document.getElementById('create-username').value;
         const email = document.getElementById('create-email').value;
         const phone = document.getElementById('create-phone').value;
@@ -522,6 +532,8 @@ export class AdminManager {
                 role: role
             };
 
+            console.log('Sending user data:', userData);
+
             const result = await this.api.createUser(userData);
             
             if (result.success) {
@@ -529,11 +541,12 @@ export class AdminManager {
                 this.hideAddUserModal();
                 this.loadUsers();
             } else {
-                throw new Error(result.error);
+                throw new Error(result.error || 'Неизвестная ошибка сервера');
             }
         } catch (error) {
             console.error('Ошибка создания пользователя:', error);
-            this.uiManager.showToast(error.message, 'error');
+            console.log('Response details:', error.response); 
+            this.uiManager.showToast(`Ошибка создания пользователя: ${error.message}`, 'error');
         } finally {
             this.uiManager.showButtonLoading('create-user-save', false);
         }

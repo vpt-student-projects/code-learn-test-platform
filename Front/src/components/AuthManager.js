@@ -26,24 +26,19 @@ export class AuthManager {
         }
     }
     
-        // components/AuthManager.js
     forceLogout() {
-        console.log('🛑 Force logout triggered');
+        console.log('Force logout triggered');
         
-        // Очищаем хранилище
         this.storage.clearAuth();
         
-        // Сбрасываем UI
         this.uiManager.showAuthButtons();
         this.uiManager.showSection('catalog');
         this.uiManager.showToast('Вы вышли из системы', 'info');
         
-        // Останавливаем слушатели сессий если есть
         if (window.app && window.app.sessionManager) {
             window.app.sessionManager.stopSessionListener();
         }
         
-        // Перезагружаем страницу
         setTimeout(() => {
             window.location.reload();
         }, 1000);

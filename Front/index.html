@@ -381,6 +381,7 @@
     </main>
   </div>
 
+<!-- МОДАЛЬНЫЕ ОКНА (ТОЛЬКО ОДИН ЭКЗЕМПЛЯР КАЖДОГО) -->
 <div id="modal-login" class="modal hidden" role="dialog" aria-labelledby="login-title">
     <div class="modal-card">
         <header><h3 id="login-title">Вход в LearnBox</h3></header>
@@ -525,129 +526,8 @@
     </div>
 </div>
 
-<div id="modal-signup" class="modal hidden" role="dialog" aria-labelledby="signup-title">
-    <div class="modal-card">
-        <header><h3 id="signup-title">Регистрация в LearnBox</h3></header>
-        <form class="modal-form" id="form-signup" novalidate autocomplete="off">
-            <label for="signup-username" class="form-label">
-                <input id="signup-username" type="text" placeholder="Введите имя пользователя" required aria-required="true" autocomplete="username">
-            </label>
-            <label for="signup-email" class="form-label">
-                <input id="signup-email" type="email" placeholder="Введите ваш email" required aria-required="true" autocomplete="email">
-            </label>
-            <label for="signup-phone" class="form-label">
-                <input id="signup-phone" type="tel" placeholder="Номер телефона (необязательно)" autocomplete="tel">
-            </label>
-            
-            <div class="filter-group">
-                <label for="signup-role" class="filter-label">Роль:</label>
-                <select id="signup-role" name="role" required aria-required="true" class="filter-select">
-                    <option value="student">Студент</option>
-                    <option value="teacher">Преподаватель</option>
-                </select>
-            </div>
-
-            <label for="signup-password" class="form-label">
-                <input id="signup-password" type="password" placeholder="Придумайте пароль" required minlength="6" aria-required="true" autocomplete="new-password">
-                <div class="password-strength">
-                    <div class="strength-bar" id="signup-password-strength-bar"></div>
-                </div>
-            </label>
-            
-            <label for="signup-password-confirm" class="form-label">
-                <input id="signup-password-confirm" type="password" placeholder="Повторите пароль" required aria-required="true" autocomplete="new-password">
-            </label>
-            
-            <div class="modal-actions">
-                <button type="submit" id="signup-ok" class="primary-btn">Зарегистрироваться</button>
-                <button type="button" class="ghost" id="signup-cancel">Отмена</button>
-            </div>
-        </form>
-        <div class="modal-footer">
-            <p class="muted">Уже есть аккаунт? <a href="#login" id="to-login">Войдите</a></p>
-        </div>
-    </div>
-</div>
-
-<div id="modal-forgot-password" class="modal hidden" role="dialog" aria-labelledby="forgot-password-title">
-    <div class="modal-card">
-        <header><h3 id="forgot-password-title">Восстановить пароль</h3></header>
-        <form class="modal-form" id="form-forgot-password" novalidate>
-            <label for="forgot-email" class="form-label">
-                <input id="forgot-email" type="email" placeholder="Введите ваш email" required aria-required="true">
-            </label>
-            <div class="modal-actions">
-                <button type="submit" id="forgot-ok" class="primary-btn">Отправить код восстановления</button>
-                <button type="button" class="ghost" id="forgot-cancel">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="modal-reset-code" class="modal hidden">
-    <div class="modal-card">
-        <header><h3>Введите код восстановления</h3></header>
-        <form class="modal-form" id="form-reset-code" novalidate>
-            <p class="muted">Мы отправили код восстановления на ваш email</p>
-            <label for="reset-code" class="form-label">
-                <input id="reset-code" type="text" placeholder="Введите 6-значный код" required maxlength="6">
-            </label>
-            <div class="modal-actions">
-                <button type="submit" id="reset-code-ok" class="primary-btn">Продолжить</button>
-                <button type="button" class="ghost" id="reset-code-cancel">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-  <div id="modal-new-password" class="modal hidden" role="dialog" aria-labelledby="new-password-title">
-    <div class="modal-card">
-        <header><h3 id="new-password-title">Создание нового пароля</h3></header>
-        <form class="modal-form" id="form-new-password" novalidate>
-            <label for="new-password" class="form-label">
-                <input id="new-password" type="password" placeholder="Введите новый пароль" required minlength="6" aria-required="true" autocomplete="new-password">
-                <div class="password-strength">
-                    <div class="strength-bar" id="new-password-strength-bar"></div>
-                </div>
-            </label>
-            <label for="confirm-new-password" class="form-label">
-                <input id="confirm-new-password" type="password" placeholder="Повторите новый пароль" required aria-required="true" autocomplete="new-password">
-            </label>
-            <div class="modal-actions">
-                <button type="submit" id="new-password-ok" class="primary-btn">Сохранить новый пароль</button>
-                <button type="button" class="ghost" id="new-password-cancel">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="modal-change-password" class="modal hidden" role="dialog" aria-labelledby="change-password-title">
-    <div class="modal-card">
-        <header><h3 id="change-password-title">Смена пароля</h3></header>
-        <form class="modal-form" id="change-password-form" novalidate>
-            <label for="current-password" class="form-label">
-                <input id="current-password" type="password" placeholder="Введите текущий пароль" required aria-required="true" autocomplete="current-password">
-            </label>
-            <label for="change-new-password" class="form-label">
-                <input id="change-new-password" type="password" placeholder="Введите новый пароль" required minlength="6" aria-required="true" autocomplete="new-password">
-                <div class="password-strength">
-                    <div class="strength-bar" id="change-password-strength-bar"></div>
-                </div>
-            </label>
-            <label for="change-confirm-password" class="form-label">
-                <input id="change-confirm-password" type="password" placeholder="Повторите новый пароль" required aria-required="true" autocomplete="new-password">
-            </label>
-            <div class="modal-actions">
-                <button type="submit" id="change-password-ok" class="primary-btn">Сменить пароль</button>
-                <button type="button" class="ghost" id="change-password-cancel">Отмена</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-
-  
-  <template id="admin-dashboard-template">
+<!-- TEMPLATES -->
+<template id="admin-dashboard-template">
     <div class="admin-stats-grid">
       <div class="stat-card">
         <h3>Всего пользователей</h3>
@@ -668,9 +548,9 @@
         {{roleStats}}
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="admin-users-template">
+<template id="admin-users-template">
     <div class="admin-section-header">
       <h2>Управление пользователями</h2>
       <div>
@@ -681,9 +561,8 @@
     <div class="admin-table-container">
       {{content}}
     </div>
-  </template>
+</template>
 
-<!-- В index.html ОБНОВЛЯЕМ шаблон -->
 <template id="user-row-template">
     <tr data-user-id="{{id}}">
         <td>{{username}}</td>
@@ -711,7 +590,7 @@
     </tr>
 </template>
 
-  <template id="admin-statistics-template">
+<template id="admin-statistics-template">
     <div class="stats-grid">
       <div class="stat-card large">
         <h3>Общая статистика</h3>
@@ -733,17 +612,17 @@
         {{roleDistribution}}
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="admin-courses-template">
+<template id="admin-courses-template">
     <div class="admin-section">
       <h3>Управление курсами</h3>
       <p class="muted">Функциональность управления курсами будет добавлена в будущем</p>
       <button class="btn-primary" onclick="app.adminManager.createCourse()">Создать курс</button>
     </div>
-  </template>
+</template>
 
-  <template id="modal-edit-user-template">
+<template id="modal-edit-user-template">
     <div class="modal-card">
       <header><h3>Редактирование пользователя</h3></header>
       <form class="modal-form" id="form-edit-user">
@@ -767,9 +646,9 @@
         </div>
       </form>
     </div>
-  </template>
+</template>
 
-  <template id="modal-change-password-admin-template">
+<template id="modal-change-password-admin-template">
     <div class="modal-card">
       <header>
         <h3>Смена пароля</h3>
@@ -791,9 +670,9 @@
         </div>
       </form>
     </div>
-  </template>
+</template>
 
-  <template id="modal-create-user-template">
+<template id="modal-create-user-template">
     <div class="modal-card">
       <header><h3>Добавление пользователя</h3></header>
       <form class="modal-form" id="form-create-user">
@@ -830,13 +709,13 @@
         </div>
       </form>
     </div>
-  </template>
+</template>
 
-  <template id="courses-grid-template">
+<template id="courses-grid-template">
     {{courses}}
-  </template>
+</template>
 
-  <template id="course-card-template">
+<template id="course-card-template">
     <div class="course-card" data-course-id="{{id}}" onclick="app.courseManager.openCourse('{{id}}')">
       <h3 class="course-title">{{title}}</h3>
       <p class="course-description">{{description}}</p>
@@ -844,17 +723,17 @@
         <span class="difficulty {{difficulty}}">{{difficultyText}}</span>
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="empty-courses-template">
+<template id="empty-courses-template">
     <div class="empty-state">
-      <div class="empty-icon">📚</div>
+      <div class="empty-icon">🤔</div>
       <h3>Курсы не найдены</h3>
       <p>Попробуйте обновить страницу или проверьте подключение</p>
     </div>
-  </template>
+</template>
 
-  <template id="teacher-courses-template">
+<template id="teacher-courses-template">
     <div class="teacher-section-header">
       <h2>Мои курсы</h2>
     </div>
@@ -871,9 +750,9 @@
         <p class="muted">Следите за обновлениями!</p>
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="teacher-students-template">
+<template id="teacher-students-template">
     <div class="teacher-section-header">
       <h2>Мои студенты</h2>
     </div>
@@ -890,9 +769,9 @@
         <p class="muted">Функция станет доступна после добавления первых курсов</p>
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="teacher-statistics-template">
+<template id="teacher-statistics-template">
     <div class="teacher-section-header">
       <h2>Статистика преподавания</h2>
     </div>
@@ -915,9 +794,9 @@
         </div>
       </div>
     </div>
-  </template>
+</template>
 
-  <template id="quiz-container-template">
+<template id="quiz-container-template">
     <div class="quiz-header">
       <h3>Проверка знаний</h3>
       <div class="quiz-progress">
@@ -933,10 +812,10 @@
         <button class="btn-secondary" id="quiz-close">Закрыть тест</button>
       </div>
     </div>
-  </template>
+</template>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
-  <script type="module" src="src/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+<script type="module" src="src/app.js"></script>
 </body>
 </html>
