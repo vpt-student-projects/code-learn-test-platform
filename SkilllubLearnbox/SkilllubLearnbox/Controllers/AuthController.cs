@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SkilllubLearnbox.DTOs;
 using SkilllubLearnbox.Models;
 using SkilllubLearnbox.Services;
+using System.Text.RegularExpressions;
 
 namespace SkilllubLearnbox.Controllers;
 
@@ -21,6 +22,65 @@ public class AuthController : ControllerBase
         _authService = authService;
         _userService = userService;
         _tokenService = tokenService;
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        try
+        {
+            _logger.LogInformation("Смена пароля для авторизованного пользователя");
+
+            var userId = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { success = false, error = "Пользователь не найден" });
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return BadRequest(new { success = false, error = "Пользователь не найден" });
+            }
+
+            bool isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.Password);
+            if (!isCurrentPasswordValid)
+            {
+                return BadRequest(new { success = false, error = "Текущий пароль неверен" });
+            }
+
+            if (string.IsNullOrEmpty(dto.NewPassword) || dto.NewPassword != dto.ConfirmPassword)
+            {
+                return BadRequest(new { success = false, error = "Пароли не совпадают" });
+            }
+
+            var passwordRegex = new Regex(@"^(?=.*[A-Za-z])(?=.*\d).{8,}$");
+            if (!passwordRegex.IsMatch(dto.NewPassword))
+            {
+                return BadRequest(new { success = false, error = "Пароль слишком простой (мин. 8 символов, буква и цифра)" });
+            }
+
+            var result = await _userService.UpdateUserPasswordAsync(userId, dto.NewPassword);
+
+            if (!result)
+            {
+                return BadRequest(new { success = false, error = "Не удалось обновить пароль" });
+            }
+
+            _logger.LogInformation("Пароль успешно изменен для пользователя: {Email}", user.Email);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Пароль успешно изменен"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при смене пароля");
+            return BadRequest(new { success = false, error = "Ошибка сервера" });
+        }
     }
 
     [HttpPost("register")]
