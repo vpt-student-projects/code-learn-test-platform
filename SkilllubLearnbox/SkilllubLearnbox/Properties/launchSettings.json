@@ -3,10 +3,12 @@
     "SkilllubLearnbox": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:7000;http://localhost:5000"
+      "applicationUrl": "https://localhost:7000;http://localhost:5000",
+      "dotnetRunMessages": true
     }
   }
 }

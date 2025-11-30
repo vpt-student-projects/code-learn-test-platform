@@ -562,13 +562,11 @@ public class AdminController : ControllerBase
                 return NotFound(new { success = false, error = "Пользователь не найден" });
             }
 
-            // ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ МЕТОД для удаления refresh токенов
             await DeleteUserRefreshTokensAsync(userId);
 
-            // Уведомляем пользователя через SSE
             _ = Task.Run(async () =>
             {
-                await Task.Delay(1000); // Небольшая задержка для гарантии отзыва токенов
+                await Task.Delay(1000); 
                 await SessionEventsController.NotifyUserSessionRevoked(userId);
             });
 

@@ -1,5 +1,4 @@
-﻿using System; // для DateTime
-
+﻿using System;
 
 namespace SkilllubLearnbox.DTOs;
 public class RoleDto

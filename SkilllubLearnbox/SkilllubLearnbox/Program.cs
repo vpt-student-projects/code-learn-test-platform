@@ -1,11 +1,11 @@
-using SkilllubLearnbox.Services;
-using SkilllubLearnbox.Utilities;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Microsoft.OpenApi;
+using SkilllubLearnbox.Services;
+using SkilllubLearnbox.Utilities;
 using Supabase;
-using Microsoft.AspNetCore.Authorization;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +18,17 @@ builder.Services.AddSingleton<ConfigHelper>();
 var configHelper = new ConfigHelper(builder.Configuration);
 builder.Services.AddSingleton(configHelper);
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Skilllub API",
+        Version = "v1",
+        Description = "API для образовательной платформы Skilllub"
+    });
+
+});
 builder.Services.AddSingleton(provider =>
 {
     var configHelper = provider.GetRequiredService<ConfigHelper>();
@@ -63,6 +74,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Skilllub API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Skilllub API Documentation";
+    });
+}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
