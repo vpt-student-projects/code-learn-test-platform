@@ -1,0 +1,82 @@
+.admin-nav,
+.teacher-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2rem;
+    background-color: var(--bg-primary);
+}
+
+.admin-nav-item,
+.teacher-nav-item {
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.admin-nav-item:hover,
+.teacher-nav-item:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover);
+}
+
+.admin-nav-item.active,
+.teacher-nav-item.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.admin-nav-item:disabled,
+.teacher-nav-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-nav-item:disabled:hover,
+.teacher-nav-item:disabled:hover {
+    background-color: transparent;
+    color: var(--text-secondary);
+}
+
+.header-nav {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.nav-item {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    color: #4a5568;  
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    color: #1a202c; 
+    background-color: #edf2f7;  
+}
+
+.nav-item.active {
+    color: #1a202c;  
+    font-weight: 600;
+    background-color: #e2e8f0; 
+}
+
+.nav-item:focus {
+    outline: none;
+}
+
+.nav-item:active {
+    transform: none;
+}
