@@ -1,40 +1,40 @@
-﻿using SkilllubLearnbox.DTOs;
+﻿using Microsoft.Extensions.Logging;
+using SkilllubLearnbox.DTOs;
 using SkilllubLearnbox.Models;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Supabase;
+using Supabase.Postgrest;
+using static Supabase.Postgrest.Constants;
 
 namespace SkilllubLearnbox.Services;
+
 public class CourseService
 {
     private readonly ILogger<CourseService> _logger;
     private readonly Supabase.Client _client;
-    private readonly IMemoryCache _cache;
+    private readonly ProgressService _progressService;
 
-    public CourseService(ILogger<CourseService> logger, Supabase.Client client, IMemoryCache cache)
+    public CourseService(
+        ILogger<CourseService> logger,
+        Supabase.Client client,
+        ProgressService progressService) 
     {
         _logger = logger;
         _client = client;
-        _cache = cache;
+        _progressService = progressService;
     }
 
     public async Task<List<CourseDto>> GetAllCoursesAsync()
     {
         try
         {
-            const string cacheKey = "all_courses";
-
-            if (_cache.TryGetValue(cacheKey, out List<CourseDto> cachedCourses))
-            {
-                _logger.LogInformation("Курсы загружены из кэша");
-                return cachedCourses;
-            }
-
             _logger.LogInformation("Загрузка курсов из базы данных");
-            await _client.InitializeAsync();
 
-            var response = await _client.From<Course>().Get();
-            var courses = response.Models?.ToList() ?? new List<Course>();
+            var response = await _client
+                .From<Course>()
+                .Where(x => x.IsPublished == true)
+                .Get();
+
+            var courses = response?.Models?.ToList() ?? new List<Course>();
 
             var courseDtos = courses.Select(c => new CourseDto
             {
@@ -42,15 +42,11 @@ public class CourseService
                 Title = c.Title,
                 Description = c.Description,
                 DifficultyLevel = c.DifficultyLevel,
-                IsPublished = c.IsPublished
+                IsPublished = c.IsPublished,
+                CreatedBy = c.CreatedBy,
+                ProgrammingLanguageId = c.ProgrammingLanguageId,
+                ProgrammingLanguageName = c.ProgrammingLanguageName
             }).ToList();
-
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
-                .SetPriority(CacheItemPriority.Normal);
-
-            _cache.Set(cacheKey, courseDtos, cacheOptions);
-            _logger.LogInformation("Курсы сохранены в кэш на 30 минут");
 
             return courseDtos;
         }
@@ -65,21 +61,27 @@ public class CourseService
     {
         try
         {
-            var cacheKey = $"course_{courseId}";
+            _logger.LogInformation("🔍 Загрузка курса {CourseId} из базы данных", courseId);
 
-            if (_cache.TryGetValue(cacheKey, out CourseDto cachedCourse))
+            var response = await _client
+                .From<Course>()
+                .Where(x => x.Id == courseId && x.IsPublished == true)
+                .Select("*")
+                .Get();
+
+            var course = response.Models?.FirstOrDefault();
+
+            if (course == null)
             {
-                _logger.LogInformation("Курс {CourseId} загружен из кэша", courseId);
-                return cachedCourse;
+                _logger.LogWarning("❌ Курс {CourseId} не найден или не опубликован", courseId);
+                return null;
             }
 
-            _logger.LogInformation("Загрузка курса {CourseId} из базы данных", courseId);
-            await _client.InitializeAsync();
-
-            var response = await _client.From<Course>().Get();
-            var course = response.Models?.FirstOrDefault(c => c.Id == courseId);
-
-            if (course == null) return null;
+            _logger.LogInformation("✅ Курс найден в БД: Title={Title}", course.Title);
+            _logger.LogInformation("📊 Raw course data:");
+            _logger.LogInformation("   - ProgrammingLanguageId: {Value}",
+                course.ProgrammingLanguageId);
+            _logger.LogInformation("   - ProgrammingLanguageName: {Value}", course.ProgrammingLanguageName);
 
             var courseDto = new CourseDto
             {
@@ -87,58 +89,110 @@ public class CourseService
                 Title = course.Title,
                 Description = course.Description,
                 DifficultyLevel = course.DifficultyLevel,
-                IsPublished = course.IsPublished
+                IsPublished = course.IsPublished,
+                CreatedBy = course.CreatedBy,
+                ProgrammingLanguageId = course.ProgrammingLanguageId,
+                ProgrammingLanguageName = course.ProgrammingLanguageName
             };
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(30));
-
-            _cache.Set(cacheKey, courseDto, cacheOptions);
+            _logger.LogInformation("📤 Возвращаем DTO: LangId={LangId}, LangName={LangName}",
+                courseDto.ProgrammingLanguageId, courseDto.ProgrammingLanguageName);
 
             return courseDto;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при получении курса {CourseId}", courseId);
+            _logger.LogError(ex, "❌ Ошибка при получении курса {CourseId}", courseId);
             return null;
         }
     }
 
-    public async Task<List<ModuleDto>> GetCourseModulesAsync(string courseId)
+    public async Task<List<ModuleDto>> GetCourseModulesAsync(string courseId, string userId = null)
     {
         try
         {
-            var cacheKey = $"modules_{courseId}";
-
-            if (_cache.TryGetValue(cacheKey, out List<ModuleDto> cachedModules))
+            if (string.IsNullOrEmpty(courseId))
             {
-                _logger.LogInformation("Модули курса {CourseId} загружены из кэша", courseId);
-                return cachedModules;
+                _logger.LogWarning("Пустой courseId при получении модулей");
+                return new List<ModuleDto>();
             }
 
             _logger.LogInformation("Загрузка модулей курса {CourseId} из базы данных", courseId);
-            await _client.InitializeAsync();
 
-            var response = await _client.From<Module>().Get();
-            var modules = response.Models?
-                .Where(m => m.CourseId == courseId)
-                .OrderBy(m => m.ModuleOrder)
-                .ToList() ?? new List<Module>();
+            var modulesResponse = await _client
+                .From<Module>()
+                .Where(x => x.CourseId == courseId)
+                .Order(x => x.ModuleOrder, Constants.Ordering.Ascending)
+                .Get();
 
-            var moduleDtos = modules.Select(m => new ModuleDto
+            var modules = modulesResponse.Models?.ToList() ?? new List<Module>();
+
+            if (!modules.Any())
             {
-                Id = m.Id,
-                CourseId = m.CourseId,
-                Title = m.Title,
-                Description = m.Description,
-                Order = m.ModuleOrder
-            }).ToList();
+                _logger.LogWarning("Модули не найдены для курса {CourseId}", courseId);
+                return new List<ModuleDto>();
+            }
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(20));
+            var moduleDtos = new List<ModuleDto>();
 
-            _cache.Set(cacheKey, moduleDtos, cacheOptions);
+            if (string.IsNullOrEmpty(userId))
+            {
+                moduleDtos = modules.Select(module => new ModuleDto
+                {
+                    Id = module.Id,
+                    CourseId = module.CourseId,
+                    Title = module.Title,
+                    Description = module.Description,
+                    Order = module.ModuleOrder,
+                    IsAccessible = true,
+                    IsCompleted = false,
+                }).ToList();
 
+                _logger.LogInformation("Загружено {Count} модулей для курса {CourseId}", moduleDtos.Count, courseId);
+                return moduleDtos;
+            }
+
+            var moduleIds = modules.Select(m => m.Id).ToList();
+
+            var lessonsResponse = await _client
+                .From<Lesson>()
+                .Filter("module_id", Operator.In, moduleIds)
+                .Get();
+
+            var allLessons = lessonsResponse.Models?.ToList() ?? new List<Lesson>();
+            var lessonsByModule = allLessons.GroupBy(l => l.ModuleId).ToDictionary(g => g.Key, g => g.ToList());
+
+            var accessibleTasks = new Dictionary<string, Task<bool>>();
+            foreach (var module in modules)
+            {
+                accessibleTasks[module.Id] = _progressService.IsModuleAccessibleAsync(userId, module.Id);
+            }
+            await Task.WhenAll(accessibleTasks.Values);
+
+            var completedTasks = new Dictionary<string, Task<bool>>();
+            foreach (var module in modules)
+            {
+                completedTasks[module.Id] = _progressService.IsModuleCompletedAsync(userId, module.Id);
+            }
+            await Task.WhenAll(completedTasks.Values);
+
+            foreach (var module in modules)
+            {
+                lessonsByModule.TryGetValue(module.Id, out var moduleLessons);
+
+                moduleDtos.Add(new ModuleDto
+                {
+                    Id = module.Id,
+                    CourseId = module.CourseId,
+                    Title = module.Title,
+                    Description = module.Description,
+                    Order = module.ModuleOrder,
+                    IsAccessible = await accessibleTasks[module.Id],
+                    IsCompleted = await completedTasks[module.Id]
+                });
+            }
+
+            _logger.LogInformation("Загружено {Count} модулей для курса {CourseId}", moduleDtos.Count, courseId);
             return moduleDtos;
         }
         catch (Exception ex)
@@ -148,43 +202,99 @@ public class CourseService
         }
     }
 
-    public async Task<List<LessonDto>> GetModuleLessonsAsync(string moduleId)
+    public async Task<List<LessonDto>> GetModuleLessonsAsync(string moduleId, string userId = null)
     {
         try
         {
-            var cacheKey = $"lessons_{moduleId}";
-
-            if (_cache.TryGetValue(cacheKey, out List<LessonDto> cachedLessons))
+            if (string.IsNullOrEmpty(moduleId))
             {
-                _logger.LogInformation("Уроки модуля {ModuleId} загружены из кэша", moduleId);
-                return cachedLessons;
+                _logger.LogWarning("Пустой moduleId при получении уроков");
+                return new List<LessonDto>();
             }
 
             _logger.LogInformation("Загрузка уроков модуля {ModuleId} из базы данных", moduleId);
-            await _client.InitializeAsync();
 
-            var response = await _client.From<Lesson>().Get();
-            var lessons = response.Models?
-                .Where(l => l.ModuleId == moduleId)
-                .OrderBy(l => l.LessonOrder)
-                .ToList() ?? new List<Lesson>();
+            var lessonsResponse = await _client
+                .From<Lesson>()
+                .Where(x => x.ModuleId == moduleId)
+                .Order(x => x.LessonOrder, Constants.Ordering.Ascending)
+                .Get();
 
-            var lessonDtos = lessons.Select(l => new LessonDto
+            if (lessonsResponse == null || lessonsResponse.Models == null)
             {
-                Id = l.Id,
-                ModuleId = l.ModuleId,
-                Title = l.Title,
-                Description = l.Description,
-                Content = l.Content,
-                Order = l.LessonOrder,
-                Difficulty = l.Difficulty
-            }).ToList();
+                _logger.LogWarning("Уроки не найдены для модуля {ModuleId}", moduleId);
+                return new List<LessonDto>();
+            }
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
+            var lessons = lessonsResponse.Models.ToList();
+            var lessonDtos = new List<LessonDto>();
 
-            _cache.Set(cacheKey, lessonDtos, cacheOptions);
+            HashSet<string> completedLessonIds = new HashSet<string>();
 
+            if (!string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var progressResponse = await _client
+                        .From<UserProgress>()
+                        .Where(x => x.UserId == userId && x.Completed == true)
+                        .Get();
+
+                    if (progressResponse != null && progressResponse.Models != null)
+                    {
+                        completedLessonIds = new HashSet<string>(
+                            progressResponse.Models
+                                .Where(up => !string.IsNullOrEmpty(up.LessonId))
+                                .Select(up => up.LessonId)
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка при получении прогресса для модуля {ModuleId}", moduleId);
+                }
+            }
+
+            HashSet<string> lessonsWithQuiz = new HashSet<string>();
+            try
+            {
+                var quizResponse = await _client
+                    .From<QuizQuestion>()
+                    .Select("lesson_id")
+                    .Get();
+
+                if (quizResponse != null && quizResponse.Models != null)
+                {
+                    lessonsWithQuiz = new HashSet<string>(
+                        quizResponse.Models
+                            .Where(q => !string.IsNullOrEmpty(q.LessonId))
+                            .Select(q => q.LessonId)
+                    );
+                }
+            }
+            catch
+            {
+            }
+
+            foreach (var lesson in lessons)
+            {
+                if (lesson == null) continue;
+
+                lessonDtos.Add(new LessonDto
+                {
+                    Id = lesson.Id,
+                    ModuleId = lesson.ModuleId,
+                    Title = lesson.Title,
+                    Description = lesson.Description,
+                    Content = lesson.Content,
+                    Order = lesson.LessonOrder,
+                    Difficulty = lesson.Difficulty,
+                    IsCompleted = completedLessonIds.Contains(lesson.Id),
+                    HasQuiz = lessonsWithQuiz.Contains(lesson.Id)
+                });
+            }
+
+            _logger.LogInformation("Загружено {Count} уроков для модуля {ModuleId}", lessonDtos.Count, moduleId);
             return lessonDtos;
         }
         catch (Exception ex)
@@ -194,25 +304,47 @@ public class CourseService
         }
     }
 
-    public async Task<LessonDto?> GetLessonByIdAsync(string lessonId)
+    public async Task<LessonDto?> GetLessonByIdAsync(string lessonId, string userId = null)
     {
         try
         {
-            var cacheKey = $"lesson_{lessonId}";
-
-            if (_cache.TryGetValue(cacheKey, out LessonDto cachedLesson))
+            if (string.IsNullOrEmpty(lessonId))
             {
-                _logger.LogInformation("Урок {LessonId} загружен из кэша", lessonId);
-                return cachedLesson;
+                _logger.LogWarning("⚠️ Пустой lessonId при получении урока");
+                return null;
             }
 
-            _logger.LogInformation("Загрузка урока {LessonId} из базы данных", lessonId);
-            await _client.InitializeAsync();
+            _logger.LogInformation("📚 Загрузка урока {LessonId} из базы данных", lessonId);
 
-            var response = await _client.From<Lesson>().Get();
-            var lesson = response.Models?.FirstOrDefault(l => l.Id == lessonId);
+            var allLessons = await _client
+                .From<Lesson>()
+                .Get();
 
-            if (lesson == null) return null;
+            var lesson = allLessons.Models?
+                .FirstOrDefault(x => x.Id == lessonId);
+
+            if (lesson == null)
+            {
+                _logger.LogWarning("⚠️ Урок {LessonId} не найден", lessonId);
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var isAccessible = await _progressService.IsModuleAccessibleAsync(userId, lesson.ModuleId);
+                    if (!isAccessible)
+                    {
+                        _logger.LogInformation("🔒 Урок {LessonId} недоступен для пользователя {UserId}", lessonId, userId);
+                        return null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Ошибка проверки доступности урока {LessonId}", lessonId);
+                }
+            }
 
             var lessonDto = new LessonDto
             {
@@ -222,41 +354,96 @@ public class CourseService
                 Description = lesson.Description,
                 Content = lesson.Content,
                 Order = lesson.LessonOrder,
-                Difficulty = lesson.Difficulty
+                Difficulty = lesson.Difficulty,
+                IsCompleted = false,
+                HasQuiz = false,
+                HasCodeExercise = false,
+                IsTheoryCompleted = false,
+                IsPracticeCompleted = false
             };
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
+            try
+            {
+                var allQuizQuestions = await _client
+                    .From<QuizQuestion>()
+                    .Get();
 
-            _cache.Set(cacheKey, lessonDto, cacheOptions);
+                lessonDto.HasQuiz = allQuizQuestions.Models?
+                    .Any(q => q.LessonId == lessonId) ?? false;
+            }
+            catch { }
+
+            try
+            {
+                var allLanguages = await _client
+                    .From<ProgrammingLanguage>()
+                    .Get();
+
+                var pythonLang = allLanguages.Models?
+                    .FirstOrDefault(l => l.Name.ToLower() == "python");
+
+                if (pythonLang != null)
+                {
+                    var allCodeTemplates = await _client
+                        .From<CodeTemplate>()
+                        .Get();
+
+                    lessonDto.HasCodeExercise = allCodeTemplates.Models?
+                        .Any(ct => ct.LessonId == lessonId && ct.LanguageId == pythonLang.Id) ?? false;
+                }
+            }
+            catch { }
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var progress = await _progressService.GetUserProgressAsync(userId, lessonId);
+                    if (progress != null)
+                    {
+                        lessonDto.IsTheoryCompleted = progress.TheoryCompleted;
+                        lessonDto.IsPracticeCompleted = progress.PracticeCompleted;
+                        lessonDto.IsCompleted = progress.Completed;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Ошибка при загрузке прогресса урока {LessonId}", lessonId);
+                }
+            }
 
             return lessonDto;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Ошибка при получении урока {LessonId}", lessonId);
+            _logger.LogError(ex, "❌ Ошибка при получении урока {LessonId}", lessonId);
             return null;
         }
     }
 
-    public async Task<CodeTemplateDto?> GetLessonCodeTemplateAsync(string lessonId, string languageId)
+    public async Task<CodeTemplateDto?> GetLessonCodeTemplateAsync(string lessonId, string languageId, string userId = null)
     {
         try
         {
-            var cacheKey = $"template_{lessonId}_{languageId}";
-
-            if (_cache.TryGetValue(cacheKey, out CodeTemplateDto cachedTemplate))
+            if (!string.IsNullOrEmpty(userId))
             {
-                _logger.LogInformation("Шаблон кода {LessonId} загружен из кэша", lessonId);
-                return cachedTemplate;
+                var lesson = await GetLessonByIdAsync(lessonId, userId);
+                if (lesson == null)
+                {
+                    _logger.LogInformation("Урок {LessonId} недоступен для пользователя {UserId}", lessonId, userId);
+                    return null;
+                }
             }
 
             _logger.LogInformation("Загрузка шаблона кода для урока {LessonId} из базы данных", lessonId);
             await _client.InitializeAsync();
 
-            var response = await _client.From<CodeTemplate>().Get();
-            var template = response.Models?
-                .FirstOrDefault(t => t.LessonId == lessonId && t.LanguageId == languageId);
+            var response = await _client
+                .From<CodeTemplate>()
+                .Where(x => x.LessonId == lessonId && x.LanguageId == languageId)
+                .Get();
+
+            var template = response.Models?.FirstOrDefault();
 
             if (template == null) return null;
 
@@ -270,11 +457,6 @@ public class CourseService
                 SolutionCode = template.SolutionCode
             };
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(60));
-
-            _cache.Set(cacheKey, templateDto, cacheOptions);
-
             return templateDto;
         }
         catch (Exception ex)
@@ -284,9 +466,83 @@ public class CourseService
         }
     }
 
+    public async Task PreloadCourseDataAsync(string courseId, string userId = null)
+    {
+        try
+        {
+            _logger.LogInformation("🚀 Предзагрузка данных курса {CourseId} для пользователя {UserId}",
+                courseId, userId ?? "гость");
+
+            var tasks = new List<Task>();
+
+            tasks.Add(GetCourseByIdAsync(courseId));
+            tasks.Add(GetCourseModulesAsync(courseId, userId));
+
+            var modules = await GetCourseModulesAsync(courseId, userId);
+            var moduleIds = modules.Select(m => m.Id).ToList();
+
+            if (moduleIds.Any())
+            {
+                var lessonTasks = moduleIds.Select(moduleId =>
+                    GetModuleLessonsAsync(moduleId, userId)).ToList();
+                tasks.AddRange(lessonTasks);
+            }
+
+            await Task.WhenAll(tasks);
+
+            _logger.LogInformation("✅ Предзагрузка данных курса {CourseId} завершена", courseId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при предзагрузке данных курса");
+        }
+    }
+
+    public async Task<Dictionary<string, LessonDto>> GetLessonsBulkAsync(List<string> lessonIds, string userId = null)
+    {
+        try
+        {
+            if (lessonIds == null || !lessonIds.Any())
+                return new Dictionary<string, LessonDto>();
+
+            _logger.LogInformation("Bulk загрузка {Count} уроков", lessonIds.Count);
+
+            await _client.InitializeAsync();
+
+            var response = await _client.From<Lesson>().Get();
+            var lessons = response.Models?
+                .Where(l => lessonIds.Contains(l.Id))
+                .ToList() ?? new List<Lesson>();
+
+            var result = new Dictionary<string, LessonDto>();
+
+            foreach (var lesson in lessons)
+            {
+                var lessonDto = new LessonDto
+                {
+                    Id = lesson.Id,
+                    ModuleId = lesson.ModuleId,
+                    Title = lesson.Title,
+                    Description = lesson.Description,
+                    Content = lesson.Content,
+                    Order = lesson.LessonOrder,
+                    Difficulty = lesson.Difficulty
+                };
+
+                result[lesson.Id] = lessonDto;
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при массовой загрузке уроков");
+            return new Dictionary<string, LessonDto>();
+        }
+    }
+
     public void ClearCoursesCache()
     {
-        _cache.Remove("all_courses");
-        _logger.LogInformation("Кэш курсов очищен");
+        _logger.LogInformation("Кэш не используется, метод очистки кэша не требуется");
     }
 }

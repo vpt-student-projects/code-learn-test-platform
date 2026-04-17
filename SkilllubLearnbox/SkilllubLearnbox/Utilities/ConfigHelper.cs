@@ -20,7 +20,7 @@ public class ConfigHelper
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(varName)))
             {
                 throw new InvalidOperationException(
-                    $"❌ Необходимо установить переменную окружения: {varName}. " +
+                    $"Необходимо установить переменную окружения: {varName}. " +
                     $"Добавь ее в файл .env в корне проекта");
             }
         }
